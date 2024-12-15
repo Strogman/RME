@@ -89,6 +89,7 @@ enum MapVersionID {
 	MAP_OTBM_2 = 1,
 	MAP_OTBM_3 = 2,
 	MAP_OTBM_4 = 3,
+    MAP_OTBM_CLIENTID = 4,
 };
 
 // The composed version of a otbm file (otbm version, client version)
@@ -127,7 +128,8 @@ enum DatFormat {
 	DAT_FORMAT_96,
 	DAT_FORMAT_1010,
 	DAT_FORMAT_1050,
-	DAT_FORMAT_1057
+	DAT_FORMAT_1057,
+	DAT_FORMAT_11
 };
 
 enum DatFlags : uint8_t {
