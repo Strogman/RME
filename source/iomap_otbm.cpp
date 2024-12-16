@@ -235,7 +235,11 @@ void Item::serializeItemAttributes_OTBM(const IOMap& maphandle, NodeFileWriteHan
 }
 
 void Item::serializeItemCompact_OTBM(const IOMap& maphandle, NodeFileWriteHandle& stream) const {
-	stream.addU16(id);
+	auto _id = id;
+	if(mapVersion.otbm == MAP_OTBM_CLIENTID){
+		_id = clientID;
+	}
+	stream.addU16(_id);
 
 	/* This is impossible
 	const ItemType& iType = g_items[id];
@@ -248,9 +252,14 @@ void Item::serializeItemCompact_OTBM(const IOMap& maphandle, NodeFileWriteHandle
 
 bool Item::serializeItemNode_OTBM(const IOMap& maphandle, NodeFileWriteHandle& file) const {
 	file.addNode(OTBM_ITEM);
-	file.addU16(id);
+	auto _id = id;
+	if(mapVersion.otbm == MAP_OTBM_CLIENTID){
+		_id = clientID;
+	}
+	
+	file.addU16(_id);
 	if (maphandle.version.otbm == MAP_OTBM_1) {
-		const ItemType& iType = g_items[id];
+		const ItemType& iType = g_items[_id];
 		if (iType.stackable || iType.isSplash() || iType.isFluidContainer()) {
 			file.addU8(getSubtype());
 		}
@@ -396,10 +405,15 @@ bool Container::unserializeItemNode_OTBM(const IOMap& maphandle, BinaryNode* nod
 
 bool Container::serializeItemNode_OTBM(const IOMap& maphandle, NodeFileWriteHandle& file) const {
 	file.addNode(OTBM_ITEM);
-	file.addU16(id);
+	auto _id = id;
+	if(mapVersion.otbm == MAP_OTBM_CLIENTID){
+		_id = clientID;
+	}
+	
+	file.addU16(_id);
 	if (maphandle.version.otbm == MAP_OTBM_1) {
 		// In the ludicrous event that an item is a container AND stackable, we have to do this. :p
-		const ItemType& iType = g_items[id];
+		const ItemType& iType = g_items[_id];
 		if (iType.stackable || iType.isSplash() || iType.isFluidContainer()) {
 			file.addU8(getSubtype());
 		}
