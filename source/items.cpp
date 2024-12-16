@@ -819,6 +819,327 @@ bool ItemDatabase::loadFromOtb(const FileName& datafile, wxString& error, wxArra
 	return true;
 }
 
+bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArrayString& warnings) {
+	std::string filename = nstr((datafile.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + datafile.GetFullName()));
+	auto file = filename;
+	std::filesystem::path filePath(file);
+
+	if (!std::filesystem::exists(filePath)) {
+		error = "[Items::loadFromDat] - File not found.";
+		return false;
+	}
+
+	std::ifstream fileStrem(filePath, std::ios::binary);
+
+	if (!fileStrem.is_open()) {
+		error = "[Items::loadFromDat] - File to open file.";
+		return false;
+	}
+
+	std::streamsize fileSize = std::filesystem::file_size(filePath);
+
+	char* buffer = new char[fileSize];
+
+	if (!fileStrem.read(buffer, fileSize)) {
+		error = "[Items::loadFromDat] - Failed to read file.";
+		delete[] buffer;
+		fileStrem.close();
+		return false;
+	}
+
+	fileStrem.close();
+
+	PropStream props;
+	props.init(buffer, fileSize);
+
+	auto signature = props.read<uint32_t>();
+	auto objectCount = props.read<uint16_t>();
+	auto outfitCount = props.read<uint16_t>();
+	auto effectCount = props.read<uint16_t>();
+	auto missileCount = props.read<uint16_t>();
+
+	uint16_t firstId = 100;
+	for (uint16_t id = firstId; id < objectCount; ++id) {
+
+		ItemType &item = newd ItemType();
+		item->id = id;
+		item->clientID = id;
+		item->sprite = static_cast<GameSprite*>(g_gui.gfx.getSprite(t->clientID));
+
+		uint8_t icount = 0, attr = -1;
+		bool done = false;
+		for (uint8_t i = 0; i < DatAttrDefault; ++i) {
+			icount++;
+			attr = props.read<uint8_t>();
+			if (attr == DatAttrDefault) {
+				done = true;
+				break;
+			}
+
+			item->group = ItemGroup_t(attr);
+
+			switch (attr) {
+				case DatAttrGround:
+					//item->peed = props.read<uint16_t>();
+					break;
+
+				case DatAttrClip:
+					item->alwaysOnTopOrder = 1;
+					break;
+
+				case DatAttrTop:
+					item->alwaysOnTopOrder = 3;
+					break;
+
+				case DatAttrBottom:
+					item->alwaysOnTopOrder = 2;
+					break;
+
+				case DatAttrContainer:
+					item->type = ITEM_TYPE_CONTAINER;
+					break;
+
+				case DatAttrStackable: {
+					item->stackable = true;
+					break;
+				}
+
+				case DatAttrUsable:
+					//item->useable = true;
+					break;
+
+				case DatAttrForceUse:
+					break;
+
+				case DatAttrMultiUse:
+					break;
+
+				case DatAttrWriteable:
+					item->canReadText = true;
+					item->maxTextLen = props.read<uint16_t>();
+					break;
+
+				case DatAttrWriteableOnce:
+					item->canReadText = true;
+					item->maxTextLen = props.read<uint16_t>();
+					break;
+
+				case DatAttrLiquidPool:
+					break;
+
+				case DatAttrLiquidContainer:
+					break;
+
+				case DatAttrImpassable:
+					//item.blockSolid = true;
+					break;
+
+				case DatAttrUnmovable:
+					//item.movable = false;
+					break;
+
+				case DatAttrBlocksSight:
+					//item.blockProjectile = true;
+					break;
+
+				case DatAttrBlocksPathfinding:
+					item->blockPathfinder = true;
+					break;
+
+				case DatAttrNoMovementAnimation:
+					break;
+
+				case DatAttrPickupable:
+					item->pickupable = true;
+					break;
+
+				case DatAttrHangable:
+					item->isHangable = true;
+					break;
+
+				case DatAttrHooksSouth:
+					//item.isVertical = true;
+					break;
+
+				case DatAttrHooksEast:
+					//item.isHorizontal = true;
+					break;
+
+				case DatAttrRotateable:
+					item->rotable = true;
+					break;
+
+				case DatAttrLightSource:
+					//item->lightLevel = props.read<uint16_t>();
+					//item->lightColor = props.read<uint16_t>();
+					 props.read<uint16_t>();
+					 props.read<uint16_t>();
+					break;
+
+				case DatAttrAlwaysSeen:
+					break;
+
+				case DatAttrTranslucent:
+					break;
+
+				case DatAttrDisplaced:
+					props.read<uint16_t>();
+					props.read<uint16_t>();
+					break;
+
+				case DatAttrElevated:
+					item->hasElevation = true;
+					props.read<uint16_t>();
+					break;
+
+				case DatAttrAlwaysAnimated:
+					break;
+
+				case DatAttrMinimapColor:
+					props.read<uint16_t>();
+					break;
+
+				case DatAttrFullTile:
+					//item.group = ITEM_GROUP_GROUND;
+					break;
+
+				case DatAttrHelpInfo: {
+					uint16_t opt = props.read<uint16_t>();
+					if (opt == 1112) {
+						item->canReadText = true;
+					}
+					break;
+				}
+
+				case DatAttrLookthrough:
+					item->ignoreLook = true;
+					break;
+
+				case DatAttrClothes:
+					props.read<uint16_t>();
+					break;
+
+				case DatAttrMarket: {
+					auto category = props.read<uint16_t>();
+					auto tradeAsObjectId = props.read<uint16_t>();
+					auto showAsObjectId = props.read<uint16_t>();
+					auto name = props.readString();
+					auto vocation = props.read<uint16_t>();
+					auto minimumLevel = props.read<uint16_t>();
+					break;
+				}
+
+				case DatAttrDefaultAction:
+					props.read<uint16_t>();
+					break;
+
+				case DatAttrWrappable:
+				case DatAttrUnWrappable:
+				case DatAttrTopEffect: {
+					break;
+				}										 	
+
+				case DatAttrNpcSaleData: {
+					break;
+				}
+				case DatAttrChangedToExpire: {
+					props.read<uint16_t>(); // FormerObjectTypeid
+					break;
+				}
+				case DatAttrCorpse: {
+					//item.isCorpse = true;
+					break;
+				}
+				case DatAttrPlayerCorpse: {
+					//item.isCorpse = true;
+					break;
+				}
+				case DatAttrCyclopediaItem: {
+					props.read<uint16_t>(); // CyclopediaType
+					break;
+				}
+				case DatAttrAmmo: {
+					break;
+				}
+				case DatAttrShowOffSocket: {
+					//item.isPodium = true;
+					break;
+				}
+				case DatAttrReportable: {
+					break;
+				}
+				case DatAttrUpgradeClassification: {
+					props.read<uint16_t>();
+					break;
+				}
+				case DatAttrWearout: {
+					//item.wearOut = true;
+					break;
+				}
+				case DatAttrClockExpire: {
+					//item.clockExpire = true;
+					break;
+				}
+				case DatAttrExpire: {
+					//item.expire = true;
+					break;
+				}
+				case DatAttrExpireStop: {
+					//item.expireStop = true;
+					break;
+				}
+
+				default: {
+					break;
+				}
+			}
+			
+			if (item) {
+				if (items[item->id]) {
+					warnings.push_back("items.otb: Duplicate items");
+					delete items[item->id];
+				}
+				items.set(item->id, item);
+			}
+
+			if (max_item_id < item->id) {
+				max_item_id = item->id;
+			}
+			
+		}
+
+		if (!done) {
+			g_logger().error("corrupt data (id: {}, count: {}, lastAttr: {})", unsigned(item.id), unsigned(icount), unsigned(attr));
+			delete[] buffer;
+			return false;
+		}
+
+		uint8_t width = props.read<uint8_t>();
+		uint8_t height = props.read<uint8_t>();
+		if (width > 1 || height > 1) {
+			props.skip(1);
+		}
+
+		uint8_t layers = props.read<uint8_t>();
+		uint8_t patternX = props.read<uint8_t>();
+		uint8_t patternY = props.read<uint8_t>();
+		uint8_t patternZ = props.read<uint8_t>();
+		uint8_t phases = props.read<uint8_t>();
+		if (phases > 1) {
+			item.animationType = props.read<uint8_t>() == 1 ? ANIMATION_DESYNC : ANIMATION_RANDOM;
+			props.skip(5);
+
+			for (int16_t i = 0; i < phases; ++i) {
+				props.skip(8);
+			}
+		}
+		props.skip(4 * ((width * height) * layers * patternX * patternY * patternZ * phases));
+	}
+
+	delete[] buffer;
+	return true;
+}
+
 bool ItemDatabase::loadItemFromGameXml(pugi::xml_node itemNode, int id) {
 	ClientVersionID clientVersion = g_gui.GetCurrentVersionID();
 	if (clientVersion < CLIENT_VERSION_980 && id > 20000 && id < 20100) {
