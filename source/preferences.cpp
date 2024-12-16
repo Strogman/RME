@@ -511,10 +511,10 @@ wxNotebookPage* PreferencesWindow::CreateClientPage() {
 	options_sizer->Add(check_sigs_chkbox, 0, wxLEFT | wxRIGHT | wxTOP, 5);
 
 	// Check file sigs checkbox
-	check_sigs_chkbox = newd wxCheckBox(client_page, wxID_ANY, "Use clientId");
-	check_sigs_chkbox->SetValue(g_settings.getBoolean(Config::USE_CLIENT_ID));
-	check_sigs_chkbox->SetToolTip("use essa opcao para usar clientId de vez de serverId.");
-	options_sizer->Add(check_sigs_chkbox, 0, wxLEFT | wxRIGHT | wxTOP, 5);
+	use_clientid_chkbox = newd wxCheckBox(client_page, wxID_ANY, "Use clientId");
+	use_clientid_chkbox->SetValue(g_settings.getBoolean(Config::USE_CLIENT_ID));
+	use_clientid_chkbox->SetToolTip("use essa opcao para usar clientId de vez de serverId.");
+	options_sizer->Add(use_clientid_chkbox, 0, wxLEFT | wxRIGHT | wxTOP, 5);
 
 	// Add the grid sizer
 	topsizer->Add(options_sizer, wxSizerFlags(0).Expand());
@@ -717,6 +717,8 @@ void PreferencesWindow::Apply() {
 		version_counter++;
 	}
 	g_settings.setInteger(Config::CHECK_SIGNATURES, check_sigs_chkbox->GetValue());
+
+	g_settings.setInteger(Config::USE_CLIENT_ID, use_clientid_chkbox->GetValue());
 
 	// Make sure to reload client paths
 	ClientVersion::saveVersions();
