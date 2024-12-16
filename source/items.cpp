@@ -880,7 +880,8 @@ bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArra
 
 			switch (attr) {
 				case DatAttrGround:
-					//item->peed = props.read<uint16_t>();
+					//item->speed = props.read<uint16_t>();
+					props.read<uint16_t>();
 					break;
 
 				case DatAttrClip:
@@ -909,25 +910,30 @@ bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArra
 					break;
 
 				case DatAttrForceUse:
+					//item.forceUse = true;
 					break;
 
 				case DatAttrMultiUse:
 					break;
 
-				case DatAttrWriteable:
+				case DatAttrWriteable: {
 					item->canReadText = true;
 					item->maxTextLen = props.read<uint16_t>();
 					break;
+				}
 
-				case DatAttrWriteableOnce:
+				case DatAttrWriteableOnce: {
 					item->canReadText = true;
 					item->maxTextLen = props.read<uint16_t>();
 					break;
+				}
 
 				case DatAttrLiquidPool:
+					//item.group = ITEM_GROUP_SPLASH;
 					break;
 
 				case DatAttrLiquidContainer:
+					//item.group = ITEM_GROUP_FLUID;
 					break;
 
 				case DatAttrImpassable:
@@ -969,12 +975,13 @@ bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArra
 					item->rotable = true;
 					break;
 
-				case DatAttrLightSource:
+				case DatAttrLightSource: {
 					//item->lightLevel = props.read<uint16_t>();
 					//item->lightColor = props.read<uint16_t>();
 					 props.read<uint16_t>();
 					 props.read<uint16_t>();
 					break;
+				}
 
 				case DatAttrAlwaysSeen:
 					break;
@@ -982,15 +989,17 @@ bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArra
 				case DatAttrTranslucent:
 					break;
 
-				case DatAttrDisplaced:
+				case DatAttrDisplaced: {
 					props.read<uint16_t>();
 					props.read<uint16_t>();
 					break;
+				}
 
-				case DatAttrElevated:
+				case DatAttrElevated: {
 					item->hasElevation = true;
 					props.read<uint16_t>();
 					break;
+				}
 
 				case DatAttrAlwaysAnimated:
 					break;
@@ -1011,13 +1020,15 @@ bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArra
 					break;
 				}
 
-				case DatAttrLookthrough:
+				case DatAttrLookthrough: 
 					item->ignoreLook = true;
 					break;
+				}
 
-				case DatAttrClothes:
+				case DatAttrClothes: {
 					props.read<uint16_t>();
 					break;
+				}
 
 				case DatAttrMarket: {
 					auto category = props.read<uint16_t>();
@@ -1093,23 +1104,22 @@ bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArra
 					break;
 				}
 			}
-			
-			if (item) {
-				if (items[item->id]) {
-					warnings.push_back("items.otb: Duplicate items");
-					delete items[item->id];
-				}
-				items.set(item->id, item);
-			}
+		}
 
-			if (max_item_id < item->id) {
-				max_item_id = item->id;
+		if (item) {
+			if (items[item->id]) {
+				warnings.push_back("items.otb: Duplicate items");
+				delete items[item->id];
 			}
-			
+			items.set(item->id, item);
+		}
+
+		if (max_item_id < item->id) {
+			max_item_id = item->id;
 		}
 
 		if (!done) {
-			g_logger().error("corrupt data (id: {}, count: {}, lastAttr: {})", unsigned(item.id), unsigned(icount), unsigned(attr));
+			error = "corrupt data (id: " + unsigned(item.id) + ", count: " + unsigned(icount) + ", lastAttr: " + unsigned(attr) + ")";
 			delete[] buffer;
 			return false;
 		}
