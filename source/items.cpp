@@ -821,12 +821,14 @@ bool ItemDatabase::loadFromOtb(const FileName& datafile, wxString& error, wxArra
 
 bool ItemDatabase::loadItemFromGameXml(pugi::xml_node itemNode, int id) {
 	ClientVersionID clientVersion = g_gui.GetCurrentVersionID();
-	if (clientVersion < CLIENT_VERSION_980 && id > 20000 && id < 20100) {
-		itemNode = itemNode.next_sibling();
-		return true;
-	} else if (id > 30000 && id < 30100) {
-		itemNode = itemNode.next_sibling();
-		return true;
+	if(!g_settings.getInteger(Config::USE_CLIENT_ID)){
+		if (clientVersion < CLIENT_VERSION_980 && id > 20000 && id < 20100) {
+			itemNode = itemNode.next_sibling();
+			return true;
+		} else if (id > 30000 && id < 30100) {
+			itemNode = itemNode.next_sibling();
+			return true;
+		}
 	}
 
 	ItemType& it = getItemType(id);
@@ -1086,28 +1088,35 @@ bool ItemDatabase::typeExists(int id) const {
 	ItemType* it = items[id];
 	return it != nullptr;
 }
+#include "client_version.h"
 
+	
 bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArrayString& warnings) {
 	// items.otb has most of the info we need. This only loads the GameSprite metadata
+	//ClientVersion* client_version = new ClientVersion(nullptr);
 	FileReadHandle file(nstr(datafile.GetFullPath()));
 
 	if (!file.isOk()) {
 		error += "Failed to open " + datafile.GetFullPath() + " for reading\nThe error reported was:" + wxstr(file.getErrorMessage());
 		return false;
 	}
+	
+	MajorVersion = 16;
+	MinorVersion = 16;
 
-	uint32_t datSignature;
+	uint32_t signature;
 	uint16_t objectCount;
 	uint16_t outfitCount;
 	uint16_t effectCount;
 	uint16_t missileCount;
 	
-	file.getU32(datSignature);
+	file.getU32(signature);
 	file.getU16(objectCount);
 	file.getU16(outfitCount);
 	file.getU16(effectCount);
 	file.getU16(missileCount);
-	
+
+	auto datSignature =  DAT_FORMAT_96;//ClientVersion::getDatFormatForSignature(signature);
 	auto is_extended = datSignature >= DAT_FORMAT_96;
 	auto has_frame_durations = datSignature >= DAT_FORMAT_1050;
 	auto has_frame_groups = datSignature >= DAT_FORMAT_1057;
@@ -1156,7 +1165,11 @@ bool ItemDatabase::loadFromDat(const FileName& datafile, wxString& error, wxArra
 			}
 			file.getU8(frames);
 			if (frames > 1) {
-				file.skip(6);
+				if (has_frame_durations) {
+					for (int i = 0; i < frames; i++) {
+						file.skip(6);
+					}
+				}
 				
 				if (has_frame_durations) {
 					for (int i = 0; i < frames; i++) {

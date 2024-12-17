@@ -364,7 +364,7 @@ bool GUI::LoadDataFiles(wxString& error, wxArrayString& warnings) {
 	}else{
 		g_gui.SetLoadDone(20, "Loading items.dat file...");
 		if (!g_items.loadFromDat(wxString(data_path.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) + "items.dat"), error, warnings)) {
-			error = "Couldn't load items.otb: " + error;
+			error = "Couldn't load items.dat: " + error;
 			g_gui.DestroyLoadBar();
 			UnloadVersion();
 			return false;
